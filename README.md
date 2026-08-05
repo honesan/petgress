@@ -1,69 +1,56 @@
 # Petgress
 
-Petgress (Pet + Progress) is a virtual pet simulator built with HTML, CSS, and JavaScript and hosted using GitHub Pages.
+Petgress is an interactive virtual pet simulator that runs entirely in the web browser.
 
-The simulator features a dog that automatically takes care of itself while interacting with the player.
+The project features a virtual dog whose Food, Water, and Energy values decrease over time. The dog can automatically detect its lowest need and move to the appropriate station, while users can also manually select a station.
+
+## Live Website
+
+Petgress is available through GitHub Pages:
+
+https://honesn.github.io/petgress/
+
+Repository:
+
+https://github.com/honesn/petgress
 
 ## Features
 
-- Dog follows your mouse on desktop
-- Dog follows your finger on phones and tablets
-- Food, Water, and Energy progress bars
-- Needs decrease over time
-- Dog automatically eats, drinks, and sleeps
-- Animated movement
-- Responsive design
-- Works entirely in the browser
-- No installation required
+- Virtual dog that follows the mouse pointer on desktop
+- Pointer and touch interaction on mobile devices
+- Food, Water, and Energy status bars
+- Needs that gradually decrease over time
+- Automatic need detection
+- Automatic movement to the appropriate station
+- Manual Food, Water, and Bed station controls
+- Eating, drinking, sleeping, and walking animations
+- Responsive desktop, tablet, and mobile layout
+- Mobile safe-area support
+- No backend server required
+- No user installation required
+- Automatic GitHub Pages deployment
 
 ## How It Works
 
-The dog constantly checks its three needs:
+Petgress manages three primary needs:
 
 - Food
 - Water
 - Energy
 
-Whichever need becomes the lowest determines what the dog does next.
+Each value gradually decreases while the application is running.
 
-For example:
+When one of the values reaches the automatic action threshold, the dog selects the lowest need and moves to the corresponding station.
 
-Food is lowest
+### Automatic behavior
 
-↓
-
-Walk to food dispenser
-
-↓
-
-Eat until full
-
-↓
-
-Continue walking
-
-The same applies for water and sleeping.
-
-## Technologies
-
-- HTML5
-- CSS3
-- JavaScript
-- GitHub Pages
-
-## Roadmap
-
-- Dog emoji prototype
-- Comic-style Siberian Husky
-- Multiple dog breeds
-- Day/night cycle
-- Toys
-- Happiness system
-- Save progress
-- Mobile gestures
-
-## Play
-
-Once GitHub Pages is enabled:
-
-https://YOUR_USERNAME.github.io/petgress/
+```text
+Lowest need detected
+        ↓
+Move to the appropriate station
+        ↓
+Perform the required action
+        ↓
+Restore the corresponding value
+        ↓
+Return to following the user
