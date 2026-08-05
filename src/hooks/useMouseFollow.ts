@@ -1,72 +1,77 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 
-export interface Position {
-  x: number;
-  y: number;
+import type { Position } from "../types";
+
+function getViewportCenter(): Position {
+  return {
+    x: window.innerWidth / 2,
+    y: window.innerHeight / 2,
+  };
 }
 
-export default function useMouseFollow(
-  enabled: boolean,
-  speed = 0.08
-) {
-  const [position, setPosition] = useState<Position>({
-    x: window.innerWidth / 2,
-    y: window.innerHeight / 2,
-  });
-
-  const target = useRef<Position>({
-    x: window.innerWidth / 2,
-    y: window.innerHeight / 2,
-  });
+export default function useMouseFollow(enabled: boolean) {
+  const [position, setPosition] =
+    useState<Position>(getViewportCenter);
 
   useEffect(() => {
-    const mouseMove = (event: MouseEvent) => {
-      if (!enabled) return;
+    const updatePosition = (event: PointerEvent) => {
+      if (!enabled || !event.isPrimary) {
+        return;
+      }
 
-      target.current = {
+      setPosition({
         x: event.clientX,
         y: event.clientY,
-      };
+      });
     };
 
-    const touchMove = (event: TouchEvent) => {
-      if (!enabled) return;
+    window.addEventListener("pointerdown", updatePosition, {
+      passive: true,
+    });
 
-      const touch = event.touches[0];
-
-      target.current = {
-        x: touch.clientX,
-        y: touch.clientY,
-      };
-    };
-
-    window.addEventListener("mousemove", mouseMove);
-    window.addEventListener("touchmove", touchMove, {
+    window.addEventListener("pointermove", updatePosition, {
       passive: true,
     });
 
     return () => {
-      window.removeEventListener("mousemove", mouseMove);
-      window.removeEventListener("touchmove", touchMove);
+      window.removeEventListener(
+        "pointerdown",
+        updatePosition,
+      );
+
+      window.removeEventListener(
+        "pointermove",
+        updatePosition,
+      );
     };
   }, [enabled]);
 
   useEffect(() => {
-    let animationId: number;
-
-    const animate = () => {
+    const keepInsideViewport = () => {
       setPosition((previous) => ({
-        x: previous.x + (target.current.x - previous.x) * speed,
-        y: previous.y + (target.current.y - previous.y) * speed,
+        x: Math.min(
+          Math.max(previous.x, 0),
+          window.innerWidth,
+        ),
+        y: Math.min(
+          Math.max(previous.y, 0),
+          window.innerHeight,
+        ),
       }));
-
-      animationId = requestAnimationFrame(animate);
     };
 
-    animate();
+    window.addEventListener(
+      "resize",
+      keepInsideViewport,
+    );
 
-    return () => cancelAnimationFrame(animationId);
-  }, [speed]);
+    return () => {
+      window.removeEventListener(
+        "resize",
+        keepInsideViewport,
+      );
+    };
+  }, []);
 
   return position;
 }

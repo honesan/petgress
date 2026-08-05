@@ -1,497 +1,323 @@
-import { useEffect, useState, useRef } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 
 import Dog from "./Dog";
-import Stats from "./Stats";
 import Stations from "./Stations";
+import Stats from "./Stats";
 import Status from "./Status";
 
-import usePetAI from "../hooks/usePetAI";
 import useMouseFollow from "../hooks/useMouseFollow";
+import usePetAI from "../hooks/usePetAI";
 
-import {
-  Position,
+import type {
+  NeedAction,
   PetAction,
+  Position,
 } from "../types";
 
+const CARE_DURATION_MS = 3000;
+const DOG_SIDE_MARGIN = 48;
+const DOG_TOP_LIMIT = 112;
+const DOG_BOTTOM_MARGIN = 64;
+const DOG_STATION_GAP = 44;
+
+function getInitialPosition(): Position {
+  return {
+    x: window.innerWidth / 2,
+    y: window.innerHeight / 2,
+  };
+}
+
+function clampPosition(
+  position: Position,
+): Position {
+  const maximumX = Math.max(
+    DOG_SIDE_MARGIN,
+    window.innerWidth - DOG_SIDE_MARGIN,
+  );
+
+  const maximumY = Math.max(
+    DOG_TOP_LIMIT,
+    window.innerHeight - DOG_BOTTOM_MARGIN,
+  );
+
+  return {
+    x: Math.min(
+      Math.max(
+        position.x,
+        DOG_SIDE_MARGIN,
+      ),
+      maximumX,
+    ),
+    y: Math.min(
+      Math.max(
+        position.y,
+        DOG_TOP_LIMIT,
+      ),
+      maximumY,
+    ),
+  };
+}
 
 export default function GameArea() {
-
-
   const {
     stats,
     action,
+    requestAction,
+    completeAction,
   } = usePetAI();
 
+  const pointerPosition =
+    useMouseFollow(action === "idle");
 
+  const foodRef =
+    useRef<HTMLButtonElement | null>(null);
 
-  const [dogAction, setDogAction] =
-    useState<PetAction>("idle");
+  const waterRef =
+    useRef<HTMLButtonElement | null>(null);
 
+  const bedRef =
+    useRef<HTMLButtonElement | null>(null);
 
+  const [
+    targetPosition,
+    setTargetPosition,
+  ] = useState<Position>(
+    getInitialPosition,
+  );
 
-  const [dogPosition, setDogPosition] =
-    useState<Position>({
-      x: window.innerWidth / 2,
-      y: window.innerHeight / 2,
-    });
+  const [
+    dogAction,
+    setDogAction,
+  ] = useState<PetAction>("idle");
 
+  const [
+    travelAction,
+    setTravelAction,
+  ] = useState<NeedAction | null>(null);
 
+  const [
+    facingLeft,
+    setFacingLeft,
+  ] = useState(false);
 
-  const [facingLeft, setFacingLeft] =
-    useState(false);
+  const previousTargetX =
+    useRef(targetPosition.x);
 
+  const updateTarget = useCallback(
+    (nextPosition: Position) => {
+      const clampedPosition =
+        clampPosition(nextPosition);
 
+      if (
+        clampedPosition.x <
+        previousTargetX.current - 1
+      ) {
+        setFacingLeft(true);
+      } else if (
+        clampedPosition.x >
+        previousTargetX.current + 1
+      ) {
+        setFacingLeft(false);
+      }
 
-  const gameRef =
-    useRef<HTMLDivElement>(null);
+      previousTargetX.current =
+        clampedPosition.x;
 
+      setTargetPosition(
+        clampedPosition,
+      );
+    },
+    [],
+  );
 
+  const getStationTarget = useCallback(
+    (
+      nextAction: NeedAction,
+    ): Position => {
+      const stationElement =
+        nextAction === "eating"
+          ? foodRef.current
+          : nextAction === "drinking"
+            ? waterRef.current
+            : bedRef.current;
 
-  const mousePosition =
-    useMouseFollow(
-      action === "idle"
+      if (!stationElement) {
+        return getInitialPosition();
+      }
+
+      const rectangle =
+        stationElement.getBoundingClientRect();
+
+      return {
+        x:
+          rectangle.left +
+          rectangle.width / 2,
+        y:
+          rectangle.top -
+          DOG_STATION_GAP,
+      };
+    },
+    [],
+  );
+
+  useEffect(() => {
+    if (action !== "idle") {
+      return;
+    }
+
+    setTravelAction(null);
+    setDogAction("idle");
+
+    updateTarget(
+      pointerPosition,
     );
-
-
-
-  const [targetPosition, setTargetPosition] =
-    useState<Position | null>(null);
-
-
-
-  useEffect(() => {
-
-    if(action !== "idle"){
-      return;
-    }
-
-
-    setTargetPosition({
-      x: mousePosition.x,
-      y: mousePosition.y,
-    });
-
-
   }, [
-    mousePosition,
-    action
+    action,
+    pointerPosition,
+    updateTarget,
   ]);
 
-
-
   useEffect(() => {
-
-    if(!targetPosition){
+    if (action === "idle") {
       return;
     }
 
-
-    const interval =
-      setInterval(()=>{
-
-
-        setDogPosition((current)=>{
-
-
-          const dx =
-            targetPosition.x -
-            current.x;
-
-
-          const dy =
-            targetPosition.y -
-            current.y;
-
-
-          const distance =
-            Math.sqrt(
-              dx * dx +
-              dy * dy
-            );
-
-
-          if(distance < 3){
-            return current;
-          }
-
-
-          if(dx < 0){
-            setFacingLeft(true);
-          }
-          else{
-            setFacingLeft(false);
-          }
-
-
-          return {
-
-            x:
-              current.x +
-              (dx / distance) * 5,
-
-
-            y:
-              current.y +
-              (dy / distance) * 5
-
-          };
-
-        });
-
-
-      },16);
-
-
-
-    return () =>
-      clearInterval(interval);
-
-
-  },[
-    targetPosition
-  ]);
-    /*
-    Move dog to a station.
-    The dog goes above the dispenser
-    instead of behind it.
-  */
-
-  function moveToStation(
-    position: Position,
-    nextAction: PetAction
-  ) {
-
+    setTravelAction(action);
     setDogAction("walking");
 
-
-    setTargetPosition({
-      x: position.x,
-      y: position.y - 60,
-    });
-
-
-
-    const check =
-      setInterval(()=>{
-
-
-        setDogPosition((current)=>{
-
-
-          const distance =
-            Math.sqrt(
-              Math.pow(
-                position.x - current.x,
-                2
-              )
-              +
-              Math.pow(
-                (position.y - 60) - current.y,
-                2
-              )
-            );
-
-
-          if(distance < 10){
-
-            clearInterval(check);
-
-
-            setDogAction(
-              nextAction
-            );
-
-
-            return current;
-          }
-
-
-          return current;
-
-        });
-
-
-      },100);
-
-
-
-    setTimeout(()=>{
-
-
-      if(nextAction === "eating"){
-
-        setDogAction("eating");
-
-      }
-
-
-      if(nextAction === "drinking"){
-
-        setDogAction("drinking");
-
-      }
-
-
-      if(nextAction === "sleeping"){
-
-        setDogAction("sleeping");
-
-      }
-
-
-    },1500);
-
-
-  }
-
-
-
-
-  function eat(){
-
-    moveToStation(
-      {
-        x:80,
-        y:window.innerHeight - 120
-      },
-      "eating"
+    updateTarget(
+      getStationTarget(action),
     );
-
-  }
-
-
-
-  function drink(){
-
-    moveToStation(
-      {
-        x:250,
-        y:window.innerHeight - 120
-      },
-      "drinking"
-    );
-
-  }
-
-
-
-  function sleep(){
-
-    moveToStation(
-      {
-        x:window.innerWidth - 120,
-        y:window.innerHeight - 120
-      },
-      "sleeping"
-    );
-
-  }
-
-
-
-
-  useEffect(()=>{
-
-
-    if(action === "eating"){
-
-      eat();
-
-    }
-
-
-    if(action === "drinking"){
-
-      drink();
-
-    }
-
-
-    if(action === "sleeping"){
-
-      sleep();
-
-    }
-
-
-  },[action]);
-
-
-
-  /*
-    Keep dog inside the screen
-  */
-
-  useEffect(()=>{
-
-    setDogPosition((current)=>({
-
-      x: Math.max(
-        50,
-        Math.min(
-          window.innerWidth - 50,
-          current.x
-        )
-      ),
-
-      y: Math.max(
-        120,
-        Math.min(
-          window.innerHeight - 80,
-          current.y
-        )
-      )
-
-    }));
-
-
-  },[]);
-
-
-
-  /*
-    Reset dog to center when finished
-  */
-
-  useEffect(()=>{
-
-
-    if(
-      dogAction === "eating" ||
-      dogAction === "drinking" ||
-      dogAction === "sleeping"
-    ){
-
-      const timer =
-        setTimeout(()=>{
-
-          setDogAction("idle");
-
-
-        },4000);
-
-
-      return () =>
-        clearTimeout(timer);
-
-    }
-
-
-  },[
-    dogAction
+  }, [
+    action,
+    getStationTarget,
+    updateTarget,
   ]);
 
+  useEffect(() => {
+    if (
+      !travelAction ||
+      dogAction !== travelAction
+    ) {
+      return;
+    }
 
+    const timer = window.setTimeout(
+      () => {
+        completeAction(
+          travelAction,
+        );
+      },
+      CARE_DURATION_MS,
+    );
 
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [
+    completeAction,
+    dogAction,
+    travelAction,
+  ]);
 
+  useEffect(() => {
+    const updateAfterResize = () => {
+      if (action === "idle") {
+        updateTarget(
+          pointerPosition,
+        );
+
+        return;
+      }
+
+      updateTarget(
+        getStationTarget(action),
+      );
+    };
+
+    window.addEventListener(
+      "resize",
+      updateAfterResize,
+    );
+
+    return () => {
+      window.removeEventListener(
+        "resize",
+        updateAfterResize,
+      );
+    };
+  }, [
+    action,
+    getStationTarget,
+    pointerPosition,
+    updateTarget,
+  ]);
+
+  const handleMoveComplete =
+    useCallback(() => {
+      if (
+        !travelAction ||
+        dogAction !== "walking"
+      ) {
+        return;
+      }
+
+      setDogAction(
+        travelAction,
+      );
+    }, [
+      dogAction,
+      travelAction,
+    ]);
+
+  const isBusy =
+    action !== "idle";
 
   return (
-
-    <div
-      ref={gameRef}
-      className="
-        relative
-        w-screen
-        h-screen
-        overflow-hidden
-        bg-gradient-to-b
-        from-sky-300
-        to-green-300
-      "
-    >
-
-
-      {/* Stats */}
-
+    <div className="game-area relative overflow-hidden bg-gradient-to-b from-sky-300 to-green-300">
       <Stats
         food={stats.food}
         water={stats.water}
         energy={stats.energy}
       />
 
-
-
-      {/* Status */}
-
       <Status
         action={dogAction}
         stats={stats}
       />
 
-
-
-      {/* Game field */}
-
-
-      <div
-        className="
-          absolute
-          inset-0
-          z-10
-        "
-      >
-
-
-
+      <div className="pointer-events-none absolute inset-0 z-20">
         <Dog
-
-          x={dogPosition.x}
-
-          y={dogPosition.y}
-
+          x={targetPosition.x}
+          y={targetPosition.y}
           action={dogAction}
-
           facingLeft={facingLeft}
-
+          onMoveComplete={
+            handleMoveComplete
+          }
         />
-
-
-
       </div>
-      {/* Stations */}
 
       <Stations
-
-        onFoodClick={() => {
-
-          eat();
-
-        }}
-
-
-        onWaterClick={() => {
-
-          drink();
-
-        }}
-
-
-        onBedClick={() => {
-
-          sleep();
-
-        }}
-
+        foodRef={foodRef}
+        waterRef={waterRef}
+        bedRef={bedRef}
+        disabled={isBusy}
+        onFoodClick={() =>
+          requestAction("eating")
+        }
+        onWaterClick={() =>
+          requestAction("drinking")
+        }
+        onBedClick={() =>
+          requestAction("sleeping")
+        }
       />
-
-
-
-      {/* Invisible movement area */}
-
-      <div
-
-        className="
-          absolute
-          inset-0
-          z-0
-        "
-
-      />
-
-
-
     </div>
-
   );
-
 }

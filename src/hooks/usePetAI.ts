@@ -1,82 +1,134 @@
-import { useEffect, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useState,
+} from "react";
 
+import {
+  AI_THRESHOLD,
+  DEFAULT_SETTINGS,
+  MAX_STAT,
+  MIN_STAT,
+} from "../types";
+
+import type {
+  CareAction,
+  NeedAction,
+  PetStats,
+  StatName,
+} from "../types";
+
+const ACTION_TO_STAT: Record<NeedAction, StatName> = {
+  eating: "food",
+  drinking: "water",
+  sleeping: "energy",
+};
 
 export default function usePetAI() {
   const [stats, setStats] = useState<PetStats>({
-    food: 100,
-    water: 100,
-    energy: 100
+    food: MAX_STAT,
+    water: MAX_STAT,
+    energy: MAX_STAT,
   });
 
-  const [action, setAction] = useState<PetAction>("idle");
+  const [action, setAction] =
+    useState<CareAction>("idle");
 
   useEffect(() => {
-    const timer = setInterval(() => {
+    const timer = window.setInterval(() => {
       setStats((previous) => ({
-        food: Math.max(0, previous.food - 0.15),
-        water: Math.max(0, previous.water - 0.12),
-        energy: Math.max(0, previous.energy - 0.10)
+        food: Math.max(
+          MIN_STAT,
+          previous.food -
+            DEFAULT_SETTINGS.hungerRate,
+        ),
+        water: Math.max(
+          MIN_STAT,
+          previous.water -
+            DEFAULT_SETTINGS.thirstRate,
+        ),
+        energy: Math.max(
+          MIN_STAT,
+          previous.energy -
+            DEFAULT_SETTINGS.energyRate,
+        ),
       }));
     }, 1000);
 
-    return () => clearInterval(timer);
+    return () => {
+      window.clearInterval(timer);
+    };
   }, []);
 
   useEffect(() => {
-    if (action !== "idle") return;
-
-    if (stats.food <= 30) {
-      setAction("eating");
+    if (action !== "idle") {
       return;
     }
 
-    if (stats.water <= 30) {
-      setAction("drinking");
-      return;
+    const needs: Array<{
+      action: NeedAction;
+      value: number;
+    }> = [
+      {
+        action: "eating",
+        value: stats.food,
+      },
+      {
+        action: "drinking",
+        value: stats.water,
+      },
+      {
+        action: "sleeping",
+        value: stats.energy,
+      },
+    ];
+
+    const lowestNeed = needs.reduce(
+      (lowest, current) =>
+        current.value < lowest.value
+          ? current
+          : lowest,
+    );
+
+    if (lowestNeed.value <= AI_THRESHOLD) {
+      setAction(lowestNeed.action);
     }
+  }, [action, stats]);
 
-    if (stats.energy <= 30) {
-      setAction("sleeping");
-    }
-  }, [stats, action]);
+  const requestAction = useCallback(
+    (nextAction: NeedAction) => {
+      setAction((current) =>
+        current === "idle"
+          ? nextAction
+          : current,
+      );
+    },
+    [],
+  );
 
-  useEffect(() => {
-    if (action === "idle") return;
+  const completeAction = useCallback(
+    (completedAction: NeedAction) => {
+      const statName =
+        ACTION_TO_STAT[completedAction];
 
-    const timer = setTimeout(() => {
-      setStats((previous) => {
-        switch (action) {
-          case "eating":
-            return {
-              ...previous,
-              food: 100
-            };
+      setStats((previous) => ({
+        ...previous,
+        [statName]: MAX_STAT,
+      }));
 
-          case "drinking":
-            return {
-              ...previous,
-              water: 100
-            };
-
-          case "sleeping":
-            return {
-              ...previous,
-              energy: 100
-            };
-
-          default:
-            return previous;
-        }
-      });
-
-      setAction("idle");
-    }, 3000);
-
-    return () => clearTimeout(timer);
-  }, [action]);
+      setAction((current) =>
+        current === completedAction
+          ? "idle"
+          : current,
+      );
+    },
+    [],
+  );
 
   return {
     stats,
-    action
+    action,
+    requestAction,
+    completeAction,
   };
 }

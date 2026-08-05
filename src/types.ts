@@ -16,33 +16,17 @@ export type PetAction =
   | "drinking"
   | "sleeping";
 
-export type StationType =
-  | "food"
-  | "water"
-  | "bed";
+export type CareAction = Exclude<PetAction, "walking">;
+export type NeedAction = Exclude<CareAction, "idle">;
+export type StatName = keyof PetStats;
 
-export interface Station {
-  id: StationType;
-  x: number;
-  y: number;
-}
-
-export interface DogState {
-  position: Position;
-  target: Position;
-  facingLeft: boolean;
-  action: PetAction;
-}
-
-export interface GameSettings {
-  moveSpeed: number;
+export interface NeedDecaySettings {
   hungerRate: number;
   thirstRate: number;
   energyRate: number;
 }
 
-export const DEFAULT_SETTINGS: GameSettings = {
-  moveSpeed: 4,
+export const DEFAULT_SETTINGS: NeedDecaySettings = {
   hungerRate: 0.15,
   thirstRate: 0.12,
   energyRate: 0.1,

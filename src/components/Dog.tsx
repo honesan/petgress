@@ -1,17 +1,40 @@
-import { motion } from "framer-motion";
+import { useEffect } from "react";
+import {
+  motion,
+  useAnimationControls,
+} from "framer-motion";
 
-export type DogAction =
-  | "idle"
-  | "walking"
-  | "eating"
-  | "drinking"
-  | "sleeping";
+import type { PetAction } from "../types";
 
 interface DogProps {
   x: number;
   y: number;
-  action: DogAction;
+  action: PetAction;
   facingLeft?: boolean;
+  onMoveComplete?: () => void;
+}
+
+const movementTransition = {
+  type: "spring" as const,
+  stiffness: 140,
+  damping: 20,
+  mass: 0.8,
+};
+
+function getDogEmoji(action: PetAction) {
+  switch (action) {
+    case "eating":
+      return "🐕🍖";
+
+    case "drinking":
+      return "🐕💧";
+
+    case "sleeping":
+      return "🐶💤";
+
+    default:
+      return "🐕";
+  }
 }
 
 export default function Dog({
@@ -19,64 +42,89 @@ export default function Dog({
   y,
   action,
   facingLeft = false,
+  onMoveComplete,
 }: DogProps) {
-  let emoji = "🐕";
+  const controls = useAnimationControls();
 
-  switch (action) {
-    case "eating":
-      emoji = "🐕";
-      break;
+  useEffect(() => {
+    let active = true;
 
-    case "drinking":
-      emoji = "🐕";
-      break;
+    void controls
+      .start(
+        {
+          x,
+          y,
+        },
+        movementTransition,
+      )
+      .then(() => {
+        if (
+          active &&
+          action === "walking"
+        ) {
+          onMoveComplete?.();
+        }
+      });
 
-    case "sleeping":
-      emoji = "🐶💤";
-      break;
-
-    default:
-      emoji = "🐕";
-  }
+    return () => {
+      active = false;
+    };
+  }, [
+    action,
+    controls,
+    onMoveComplete,
+    x,
+    y,
+  ]);
 
   return (
     <motion.div
-      className="absolute select-none pointer-events-none z-50"
-      animate={{
+      aria-hidden="true"
+      className="pointer-events-none absolute left-0 top-0 z-50 -ml-12 -mt-10 flex h-20 w-24 select-none items-center justify-center text-6xl leading-none will-change-transform sm:text-7xl"
+      initial={{
         x,
         y,
-        scale: action === "sleeping" ? 0.95 : 1,
       }}
-      transition={{
-        type: "spring",
-        stiffness: 140,
-        damping: 18,
-      }}
-      style={{
-        left: 0,
-        top: 0,
-        fontSize: "72px",
-        transform: `translate(-50%, -50%) scaleX(${facingLeft ? -1 : 1})`,
-      }}
+      animate={controls}
     >
-      <motion.div
-        animate={
-          action === "walking"
-            ? {
-                y: [0, -6, 0],
-              }
-            : {
-                y: [0, -2, 0],
-              }
-        }
-        transition={{
-          repeat: Infinity,
-          duration: action === "walking" ? 0.35 : 2,
-          ease: "easeInOut",
+      <div
+        className="flex h-full w-full items-center justify-center"
+        style={{
+          transform: `scaleX(${
+            facingLeft ? -1 : 1
+          })`,
         }}
       >
-        {emoji}
-      </motion.div>
+        <motion.span
+          className="inline-block"
+          animate={
+            action === "walking"
+              ? {
+                  y: [0, -7, 0],
+                  scale: 1,
+                }
+              : action === "sleeping"
+                ? {
+                    y: [0, -2, 0],
+                    scale: 0.94,
+                  }
+                : {
+                    y: [0, -2, 0],
+                    scale: 1,
+                  }
+          }
+          transition={{
+            repeat: Infinity,
+            duration:
+              action === "walking"
+                ? 0.35
+                : 1.8,
+            ease: "easeInOut",
+          }}
+        >
+          {getDogEmoji(action)}
+        </motion.span>
+      </div>
     </motion.div>
   );
 }

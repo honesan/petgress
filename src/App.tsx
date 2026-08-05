@@ -2,7 +2,7 @@ import GameArea from "./components/GameArea";
 
 export default function App() {
   return (
-    <main className="app w-screen h-screen overflow-hidden">
+    <main className="h-full w-full overflow-hidden">
       <GameArea />
     </main>
   );
