@@ -1,0 +1,87 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+html,
+body,
+#root {
+
+  width: 100%;
+  height: 100%;
+
+  margin: 0;
+
+  overflow: hidden;
+
+  font-family:
+    Arial,
+    Helvetica,
+    sans-serif;
+
+}
+
+
+/* Remove browser scrolling */
+
+* {
+
+  box-sizing: border-box;
+
+}
+
+
+/* Comic card style */
+
+.comic-card {
+
+  background: white;
+
+  border: 4px solid black;
+
+  border-radius: 24px;
+
+  box-shadow:
+    6px 6px 0px black;
+
+}
+
+
+/* Station style */
+
+.station {
+
+  border: 4px solid black;
+
+  border-radius: 25px;
+
+  box-shadow:
+    6px 6px 0px black;
+
+}
+
+
+/* Smooth animations */
+
+button,
+div {
+
+  user-select: none;
+
+}
+
+
+/* Mobile support */
+
+@media(max-width:700px){
+
+  .comic-card {
+
+    border-width: 3px;
+
+    box-shadow:
+      4px 4px 0px black;
+
+  }
+
+}

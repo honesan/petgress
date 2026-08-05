@@ -2,207 +2,40 @@
 <html lang="en">
 
 <head>
+  <meta charset="UTF-8" />
 
-    <meta charset="UTF-8">
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  />
 
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta
+    name="description"
+    content="Petgress - An interactive virtual pet simulator."
+  />
 
-    <title>Petgress</title>
+  <meta
+    name="theme-color"
+    content="#7DD3FC"
+  />
 
-    <link rel="stylesheet" href="style.css">
+  <link
+    rel="icon"
+    type="image/svg+xml"
+    href="/favicon.svg"
+  />
 
+  <title>Petgress</title>
 </head>
 
+<body class="overflow-hidden bg-sky-100">
 
-<body>
+  <div id="root"></div>
 
-
-<header>
-
-   
-
-</header>
-
-
-
-<section id="stats">
-
-
-    <div class="stat-card">
-
-        <div class="stat-title">
-
-            <span>Food</span>
-
-            <span id="foodText">100%</span>
-
-        </div>
-
-
-        <div class="progress">
-
-            <div id="foodBar" class="progress-fill food"></div>
-
-        </div>
-
-    </div>
-
-
-
-
-    <div class="stat-card">
-
-        <div class="stat-title">
-
-            <span>Water</span>
-
-            <span id="waterText">100%</span>
-
-        </div>
-
-
-        <div class="progress">
-
-            <div id="waterBar" class="progress-fill water"></div>
-
-        </div>
-
-    </div>
-
-
-
-
-    <div class="stat-card">
-
-        <div class="stat-title">
-
-            <span>Energy</span>
-
-            <span id="energyText">100%</span>
-
-        </div>
-
-
-        <div class="progress">
-
-            <div id="energyBar" class="progress-fill energy"></div>
-
-        </div>
-
-    </div>
-
-
-</section>
-
-
-
-
-
-<main id="gameArea">
-
-
-    <div id="dog">
-        🐕
-    </div>
-
-
-
-    <div id="foodStation" class="station">
-
-        🍖
-
-    </div>
-
-
-
-    <div id="waterStation" class="station">
-
-        💧
-
-    </div>
-
-
-
-    <div id="bedStation" class="station">
-
-        🛏️
-
-    </div>
-
-
-</main>
-
-
-
-
-
-<section id="status">
-
-
-    <div class="status-card">
-
-
-        <h2>Status</h2>
-
-
-        <p>
-            Action:
-            <span id="currentAction">
-                Following Cursor
-            </span>
-        </p>
-
-
-
-        <p>
-            Lowest Need:
-            <span id="lowestNeed">
-                None
-            </span>
-        </p>
-
-
-    </div>
-
-
-</section>
-
-
-
-
-
-
-<section id="controls">
-
-
-    <button id="feedBtn">
-        Feed
-    </button>
-
-
-    <button id="waterBtn">
-        Give Water
-    </button>
-
-
-    <button id="sleepBtn">
-        Sleep
-    </button>
-
-
-    <button id="resetBtn">
-        Reset
-    </button>
-
-
-</section>
-
-
-
-
-
-<script src="script.js"></script>
-
+  <script
+    type="module"
+    src="/src/main.tsx"
+  ></script>
 
 </body>
 
